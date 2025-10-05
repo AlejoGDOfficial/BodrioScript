@@ -28,6 +28,9 @@ class Parser
     function next():Token
         return tokens[++pos];
 
+    function back():Token
+        return tokens[pos - 1];
+
     public function new(tokens:Array<Token>)
     {
         this.tokens = tokens;
@@ -38,10 +41,30 @@ class Parser
         var result:Array<Expr> = [];
 
         while (pos < tokens.length)
+        {
             result.push(parseStatement());
+
+            if (back() != TSemicolon)
+                throw 'Expected ;';
+        }
 
         return result;
     }
+    
+    function isStatementStart(tok:Token):Bool
+    {
+        if (tok == null)
+            return true;
+
+        return switch (tok)
+        {
+            case TIdent("var") | TIdent("return"):
+                true;
+            default:
+                false;
+        }
+    }
+
 
     function parseStatement():Expr
     {
