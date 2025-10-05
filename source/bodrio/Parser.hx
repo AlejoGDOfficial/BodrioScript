@@ -1,7 +1,5 @@
 package bodrio;
 
-using StringTools;
-
 import bodrio.Tokenizer;
 
 enum Expr
@@ -12,6 +10,7 @@ enum Expr
     EBinop(op:Token, left:Expr, right:Expr);
     EAssign(name:String, value:Expr);
     EVarDecl(name:String, value:Expr);
+    EReturn(value:Expr);
 }
 
 class Parser
@@ -106,9 +105,19 @@ class Parser
         return EVarDecl(name, value);
     }
 
-    function parseExpr()
+    function parseExpr():Expr
     {
-        return parseBinop();
+        var token:Token = current();
+
+        switch (token)
+        {
+            case TIdent('return'):
+                advance();
+
+                return EReturn(parseExpr());
+            default:
+                return parseBinop();
+        }
     }
 
     function parseBinop(minPrec:Int = 0):Expr

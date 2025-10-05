@@ -14,6 +14,8 @@ class Main
 
         var ast = new Parser(tokens).parse();
 
-        trace(ast);
+        var interp = new Interp();
+
+        trace(interp.run(ast));
     }
 }
