@@ -1,3 +1,4 @@
 -cp source
 -main Main
+-D message.reporting=pretty
 --interp
