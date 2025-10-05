@@ -11,7 +11,7 @@ enum Expr
     EIdent(name:String);
     EBinop(op:Token, left:Expr, right:Expr);
     EAssign(name:String, value:Expr);
-    EVarDecl(name:String, typeName:String, value:Expr);
+    EVarDecl(name:String, value:Expr);
 }
 
 class Parser
@@ -20,134 +20,155 @@ class Parser
 
     var pos:Int = 0;
 
+    function current():Token
+        return tokens[pos];
+
+    function advance():Token
+        return tokens[pos++];
+
+    function next():Token
+        return tokens[++pos];
+
     public function new(tokens:Array<Token>)
     {
         this.tokens = tokens;
     }
 
-    inline function peek():Token
-        return pos < tokens.length ? tokens[pos] : null;
-
-    inline function next():Token
-        return tokens[pos++];
-
-    public function parse():Array<Expr>
+    public function parse()
     {
         var result:Array<Expr> = [];
 
-        while (peek() != null)
+        while (pos < tokens.length)
             result.push(parseStatement());
 
         return result;
     }
 
-    function parseVarDecl():Expr
-    {
-        next();
-
-        var name = switch(next())
-        {
-            case TIdent(n):
-                n;
-            default:
-                throw "Expected variable name";
-        }
-
-        var typeName = "";
-
-        if (peek() == TColon)
-        {
-            next();
-
-            typeName = switch(next())
-            {
-                case TIdent(n):
-                    n;
-                default:
-                    throw "Expected type name";
-            }
-        }
-
-        if (peek() != TEqual)
-            throw "Expected '='";
-
-        next();
-
-        var value = parseExpression();
-
-        if (peek() == TSemicolon)
-            next();
-
-        return EVarDecl(name, typeName, value);
-    }
-    
     function parseStatement():Expr
     {
-        var expr:Expr;
-        
-        switch(peek())
+        var token:Token = current();
+
+        switch (token)
         {
-            case TIdent("var"):
-                expr = parseVarDecl();
+            case TIdent('var'):
+                return parseVarDecl();
             default:
-                expr = parseExpression();
+                var expr:Expr = parseExpr();
+
+                if (current() == TSemicolon)
+                    advance();
+
+                return expr;
         }
-
-        if (peek() == TSemicolon)
-            next();
-
-        return expr;
     }
 
-    function parseExpression():Expr
+    function parseVarDecl():Expr
     {
-        var left = parseTerm();
+        advance();
 
-        while (true)
+        var nameTok:Token = advance();
+
+        var name:String = switch (nameTok)
         {
-            var t = peek();
+            case TIdent(v):
+                v;
+            default:
+                throw 'Expected variable name';
+        }
 
-            if (t == TPlus || t == TMinus || t == TStar || t == TSlash)
+        if (current() == TColon)
+        {
+            advance();
+
+            switch (current())
             {
-                var op = next();
-
-                var right = parseTerm();
-
-                left = EBinop(op, left, right);
-            } else {
-                break;
+                case TIdent(typeName):
+                    advance();
+                default:
+                    throw 'Expected type name';
             }
+        }
+
+        var value:Expr = null;
+
+        if (current() == TEqual)
+        {
+            advance();
+
+            value = parseExpr();
+        }
+
+        if (current() == TSemicolon)
+            advance();
+        else
+            throw 'Expected ;';
+
+        return EVarDecl(name, value);
+    }
+
+    function parseExpr()
+    {
+        return parseBinop();
+    }
+
+    function parseBinop(minPrec:Int = 0):Expr
+    {
+        var left = parseFactor();
+
+        while (pos < tokens.length)
+        {
+            var op = current();
+
+            var prec = switch (op)
+            {
+                case TPlus, TMinus:
+                    1;
+                case TStar, TSlash:
+                    2;
+                default:
+                    -1;
+            };
+
+            if (prec < minPrec || prec == -1)
+                break;
+
+            advance();
+
+            var right = parseBinop(prec + 1);
+
+            left = EBinop(op, left, right);
         }
 
         return left;
     }
 
-
-    function parseTerm():Expr
+    function parseFactor()
     {
-        return switch(peek())
+        var token:Token = advance();
+
+        switch (token)
         {
             case TNumber(value):
-                next();
-
-                ENumber(value);
+                return ENumber(value);
             case TString(value):
-                next();
+                return EString(value);
+            case TIdent(value):
+                return EIdent(value);
+            case TPlus:
+                return parseFactor();
+            case TMinus:
+                return EBinop(TMinus, ENumber(0), parseFactor());
+            case TLeftParen:
+                var expr:Expr = parseExpr();
 
-                EString(value);
-            case TIdent(name):
-                next();
+                if (current() != TRightParen)
+                    throw 'Expected )';
 
-                if (peek() == TEqual)
-                {
-                    next();
+                advance();
 
-                    EAssign(name, parseExpression());
-                } else {
-                    EIdent(name);
-                }
+                return expr;
             default:
-                throw 'Unexpected token ${peek()}';
+                throw 'Unexpected token $token';
         }
     }
 }

@@ -14,6 +14,8 @@ enum Token
     TEqual;
     TColon;
     TSemicolon;
+    TLeftParen;
+    TRightParen;
 }
 
 class Tokenizer
@@ -36,8 +38,6 @@ class Tokenizer
 
             switch (cur)
             {
-                case ' ', '\t', '\n':
-                    i++;
                 case '+':
                     tokens.push(TPlus);
                     
@@ -64,6 +64,14 @@ class Tokenizer
                     i++;
                 case ';':
                     tokens.push(TSemicolon);
+
+                    i++;
+                case '(':
+                    tokens.push(TLeftParen);
+
+                    i++;
+                case ')':
+                    tokens.push(TRightParen);
 
                     i++;
                 case '"', '\'':
