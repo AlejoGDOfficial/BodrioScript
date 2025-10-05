@@ -2,7 +2,8 @@ package bodrio;
 
 using StringTools;
 
-enum Token {
+enum Token
+{
     TString(string:String);
     TNumber(float:Float);
     TIdent(string:String);

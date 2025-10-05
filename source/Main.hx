@@ -2,7 +2,7 @@ package;
 
 import sys.io.File;
 
-import bodrio.Tokenizer;
+import bodrio.*;
 
 class Main
 {
@@ -12,6 +12,8 @@ class Main
 
         var tokens = Tokenizer.tokenize(content);
 
-        trace(tokens);
+        var ast = new Parser(tokens).parse();
+
+        trace(ast);
     }
 }
