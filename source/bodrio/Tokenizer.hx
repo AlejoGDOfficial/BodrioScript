@@ -3,12 +3,13 @@ package bodrio;
 using StringTools;
 
 enum Token {
+    TString(string:String);
     TNumber(float:Float);
+    TIdent(string:String);
     TPlus;
     TMinus;
     TStar;
     TSlash;
-    TIdent(string:String);
     TEqual;
     TColon;
     TSemicolon;
@@ -64,6 +65,53 @@ class Tokenizer
                     tokens.push(TSemicolon);
 
                     i++;
+                case '"', '\'':
+                    var quote = cur;
+
+                    i++;
+
+                    var str:String = '';
+
+                    while (i < base.length)
+                    {
+                        var char:String = base.charAt(i);
+
+                        if (char == '\\')
+                        {
+                            i++;
+
+                            if (i >= base.length)
+                                throw 'Unfinished escape';
+
+                            var next:String = base.charAt(i);
+
+                            str += switch (next)
+                            {
+                                case '"':
+                                    '"';
+                                case '\'':
+                                    '\'';
+                                case '\\':
+                                    '\\';
+                                case 'n':
+                                    '\n';
+                                case 't':
+                                    '\t';
+                                default:
+                                    str += next;
+                            }
+                        } else if (char == quote) {
+                            i++;
+
+                            break;
+                        } else {
+                            str += char;
+                        }
+
+                        i++;
+                    }
+
+                    tokens.push(TString(str));
                 default:
                     if (spaceReg.match(cur)) {
                         i++;
