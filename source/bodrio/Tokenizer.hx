@@ -2,8 +2,7 @@ package bodrio;
 
 using StringTools;
 
-enum Token
-{
+enum Token {
     TString(string:String);
     TNumber(float:Float);
     TIdent(string:String);
@@ -12,6 +11,9 @@ enum Token
     TStar;
     TSlash;
     TEqual;
+    TEqualEqual;
+    TPlusEqual;
+    TMinusEqual;
     TColon;
     TSemicolon;
     TLeftParen;
@@ -24,124 +26,51 @@ class Tokenizer
     static final floatReg:EReg = ~/[\d\.]/;
     static final alphaReg:EReg = ~/[a-zA-Z_]/;
     static final alphaNumericReg:EReg = ~/[\w]/;
-    static final spaceReg:EReg = ~/[\s]+/;
+    static final spaceReg:EReg = ~/[\s]/;
 
-    public static function tokenize(base:String):Array<Token>
-    {
+    static final operators:Map<String, Token> = [
+        '==' => TEqualEqual,
+        '+=' => TPlusEqual,
+        '-=' => TMinusEqual,
+        '=' => TEqual,
+        '+' => TPlus,
+        '-' => TMinus,
+        '*' => TStar,
+        '/' => TSlash,
+        ':' => TColon,
+        ';' => TSemicolon,
+        '(' => TLeftParen,
+        ')' => TRightParen
+    ];
+
+    public static function tokenize(base:String):Array<Token> {
         var tokens:Array<Token> = [];
 
         var i:Int = 0;
 
+        var maxOp = 0;
+
+        for (str in operators.keys())
+            if (str.length > maxOp)
+                maxOp = str.length;
+
         while (i < base.length)
         {
-            var cur:String = base.charAt(i);
-
-            switch (cur)
+            for (baseLength in 0...maxOp)
             {
-                case '+':
-                    tokens.push(TPlus);
-                    
-                    i++;
-                case '-':
-                    tokens.push(TMinus);
-                    
-                    i++;
-                case '*':
-                    tokens.push(TStar);
-                    
-                    i++;
-                case '/':
-                    tokens.push(TSlash);
-                    
-                    i++;
-                case '=':
-                    tokens.push(TEqual);
-                    
-                    i++;
-                case ':':
-                    tokens.push(TColon);
+                var result:Token = operators.get(base.substr(i, maxOp - baseLength));
 
-                    i++;
-                case ';':
-                    tokens.push(TSemicolon);
-
-                    i++;
-                case '(':
-                    tokens.push(TLeftParen);
-
-                    i++;
-                case ')':
-                    tokens.push(TRightParen);
-
-                    i++;
-                case '"', '\'':
-                    var quote = cur;
+                if (result != null)
+                {
+                    tokens.push(result);
 
                     i++;
 
-                    var str:String = '';
-
-                    while (i < base.length)
-                    {
-                        var char:String = base.charAt(i);
-
-                        if (char == '\\')
-                        {
-                            i++;
-
-                            if (i >= base.length)
-                                throw 'Unfinished escape';
-
-                            var next:String = base.charAt(i);
-
-                            str += switch (next)
-                            {
-                                case '"':
-                                    '"';
-                                case '\'':
-                                    '\'';
-                                case '\\':
-                                    '\\';
-                                case 'n':
-                                    '\n';
-                                case 't':
-                                    '\t';
-                                default:
-                                    str += next;
-                            }
-                        } else if (char == quote) {
-                            i++;
-
-                            break;
-                        } else {
-                            str += char;
-                        }
-
-                        i++;
-                    }
-
-                    tokens.push(TString(str));
-                default:
-                    if (spaceReg.match(cur)) {
-                        i++;
-                    } else if (numReg.match(cur)) {
-                        var num:String = '';
-
-                        while (i < base.length && floatReg.match(base.charAt(i)))
-                            num += base.charAt(i++);
-
-                        tokens.push(TNumber(Std.parseFloat(num)));
-                    } else if (alphaReg.match(cur)) {
-                        var id = '';
-
-                        while (i < base.length && alphaNumericReg.match(base.charAt(i)))
-                            id += base.charAt(i++);
-
-                        tokens.push(TIdent(id));
-                    } else {
-                        throw 'Unexpected token $cur';
-                    }
+                    continue;
+                }
             }
+
+            i++;
         }
 
         return tokens;

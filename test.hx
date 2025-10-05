@@ -1,3 +1,5 @@
-var x:Float = 5 * 5 + 5 / 5;
+var oso:String = 'oso';
 
-return x;
+oso += 'oso';
+
+return oso;

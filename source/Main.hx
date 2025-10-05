@@ -4,6 +4,14 @@ import sys.io.File;
 
 import bodrio.*;
 
+class Test
+{
+    public static function oso()
+    {
+        trace('Si te mueve');
+    }
+}
+
 class Main
 {
     static function main()
@@ -12,10 +20,6 @@ class Main
 
         var tokens = Tokenizer.tokenize(content);
 
-        var ast = new Parser(tokens).parse();
-
-        var interp = new Interp();
-
-        trace(interp.run(ast));
+        trace(tokens);
     }
 }
