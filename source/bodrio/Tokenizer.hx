@@ -8,7 +8,9 @@ enum Token {
     TNumber(float:Float);
     TIdent(string:String);
 
-    TBinOp(sym:String);
+    TAdditiveOp(op:String);
+    TMultiplicativeOp(op:String);
+
     TEqual;
     TOpenParen;
     TCloseParen;
@@ -28,21 +30,19 @@ class Tokenizer
     static final spaceReg:EReg = ~/[\s]/;
 
     static final operators:Map<String, Token> = [
+        '==' => null,
+        '+=' => null,
+        '-=' => null,
         ':' => TColon,
         ';' => TSemicolon,
         '(' => TOpenParen,
         ')' => TCloseParen,
-        '=' => TEqual
-    ];
-
-    static final binOps:Array<String> = [
-        '==',
-        '+=',
-        '-=',
-        '+',
-        '-',
-        '*',
-        '/'
+        '=' => TEqual,
+        '+' => TAdditiveOp('+'),
+        '-' => TAdditiveOp('-'),
+        '*' => TMultiplicativeOp('*'),
+        '/' => TMultiplicativeOp('/'),
+        '%' => TMultiplicativeOp('%')
     ];
 
     public static function tokenize(sourceCode:String):Array<Token> {
@@ -59,16 +59,7 @@ class Tokenizer
                 continue;
             }
 
-            var binRes:String = readAhead(source, binOps);
-
-            if (binRes != null)
-            {
-                tokens.push(TBinOp(binRes));
-
-                continue;
-            }
-
-            var opRes:String = readAhead(source, [for (k in operators.keys()) k]);
+            var opRes:String = readAhead(source, operators);
 
             if (opRes != null)
             {
@@ -147,11 +138,11 @@ class Tokenizer
         return tokens;
     }
 
-    static function readAhead(source:Array<String>, map:Array<String>):Null<String>
+    static function readAhead(source:Array<String>, map:Map<String, Token>):Null<String>
     {
         var max = 0;
         
-        for (element in map)
+        for (element in map.keys())
             if (element.length > max)
                 max = element.length;
 
@@ -159,7 +150,7 @@ class Tokenizer
         {
             var substr = source.slice(0, len).join('');
 
-            if (map.contains(substr))
+            if (map.exists(substr))
             {
                 for (i in 0...len)
                     source.shift();

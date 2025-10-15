@@ -56,13 +56,37 @@ class Parser
     
     function parseAdditiveExpr():Expr
     {
+        var left:Expr = parseMultiplicativeExpr();
+
+        while (true)
+        {
+            switch (at())
+            {
+                case TAdditiveOp(op):
+                    next();
+                    
+                    final oper:String = op;
+
+                    final right:Expr = parseMultiplicativeExpr();
+
+                    left = EBinaryExpr(left, oper, right);
+                default:
+                    break;
+            }
+        }
+
+        return left;
+    }
+
+    function parseMultiplicativeExpr():Expr
+    {
         var left:Expr = parsePrimaryExpr();
 
         while (true)
         {
             switch (at())
             {
-                case TBinOp(op):
+                case TMultiplicativeOp(op):
                     next();
                     
                     final oper:String = op;
