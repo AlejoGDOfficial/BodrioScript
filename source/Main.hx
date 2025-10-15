@@ -23,7 +23,21 @@ class Main
             if ((input ?? '').trim() == '')
                 break;
 
-            Sys.println(parser.produceAST(Tokenizer.tokenize(input)));
+            var tokens:Array<Tokenizer.Token> = Tokenizer.tokenize(input);
+
+            prettyArrayPrint('Tokens', tokens);
+
+            var ast:Array<Parser.Expr> = parser.produceAST(tokens);
+
+            prettyArrayPrint('AST', ast);
         }
+    }
+
+    static function prettyArrayPrint<T>(title:String, array:Array<T>)
+    {
+        Sys.println('\n- ' + title + ':');
+
+        for (obj in array)
+            Sys.println('    ' + obj);
     }
 }

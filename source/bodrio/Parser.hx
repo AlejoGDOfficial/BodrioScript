@@ -4,7 +4,7 @@ import bodrio.Tokenizer;
 
 enum Expr
 {
-    EBinaryExpr(left:Expr, rigth:Expr, op:String);
+    EBinaryExpr(left:Expr, op:String, rigth:Expr);
     EIdentifier(symbol:String);
     ENumericLiteral(value:Float);
 }
@@ -51,7 +51,31 @@ class Parser
 
     function parseExpr():Expr
     {
-        return parsePrimaryExpr();
+        return parseAdditiveExpr();
+    }
+    
+    function parseAdditiveExpr():Expr
+    {
+        var left:Expr = parsePrimaryExpr();
+
+        while (true)
+        {
+            switch (at())
+            {
+                case TBinOp(op):
+                    next();
+                    
+                    final oper:String = op;
+
+                    final right:Expr = parsePrimaryExpr();
+
+                    left = EBinaryExpr(left, oper, right);
+                default:
+                    break;
+            }
+        }
+
+        return left;
     }
 
     function parsePrimaryExpr():Expr
