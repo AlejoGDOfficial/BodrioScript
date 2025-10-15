@@ -1,19 +1,29 @@
 package;
 
-import sys.io.File;
-
 import bodrio.*;
+
+import haxe.Json;
+
+using StringTools;
 
 class Main
 {
     static function main()
     {
-        var code:String = File.getContent('test.hx');
+        var parser:Parser = new Parser();
 
-        var tokens:Array<Tokenizer.Token> = Tokenizer.tokenize(code);
+        Sys.println('\nBodrioScript v0.1');
 
-        var ast:Parser.Expr = new Parser(tokens).produceAST();
+        while (true)
+        {
+            Sys.print('\n> ');
 
-        trace(ast);
+            var input:String = Sys.stdin().readLine();
+
+            if ((input ?? '').trim() == '')
+                break;
+
+            Sys.println((Tokenizer.tokenize(input)));
+        }
     }
 }

@@ -4,25 +4,21 @@ import bodrio.Tokenizer;
 
 enum Expr
 {
-    Program(body:Array<Expr>);
-    BinaryExpr(left:Expr, rigth:Expr, op:String);
-    Identifier(symbol:String);
-    NumericLiteral(value:Float);
+    EBinaryExpr(left:Expr, rigth:Expr, op:String);
+    EIdentifier(symbol:String);
+    ENumericLiteral(value:Float);
 }
 
 class Parser
 {
     var tokens:Array<Token> = [];
 
-    public function new(tokens:Array<Token>)
-    {
-        this.tokens = tokens;
-    }
+    public function new() {}
 
     function at():Token
         return tokens[0];
 
-    function eat():Token
+    function next():Token
         return tokens.shift();
 
     function notEof():Bool
@@ -36,16 +32,16 @@ class Parser
         }
     }
 
-    public function produceAST():Expr
+    public function produceAST(tokens:Array<Token>):Array<Expr>
     {
-        final programBody:Array<Expr> = [];
+        this.tokens = tokens;
+
+        final ast:Array<Expr> = [];
 
         while (notEof())
-        {
-            programBody.push(parseStatement());
-        }
+            ast.push(parseStatement());
 
-        return Program(programBody);
+        return ast;
     }
 
     function parseStatement():Expr
@@ -55,7 +51,7 @@ class Parser
 
     function parseExpr():Expr
     {
-        return null;
+        return parsePrimaryExpr();
     }
 
     function parsePrimaryExpr():Expr
@@ -65,11 +61,15 @@ class Parser
         switch (tk)
         {
             case TIdent(val):
-                return Identifier(val);
-            default:
-                return null;
-        }
+                next();
 
-        return null;
+                return EIdentifier(val);
+            case TNumber(val):
+                next();
+
+                return ENumericLiteral(val);
+            default:
+                throw 'Unexpected Token: ' + tk;
+        }
     }
 }

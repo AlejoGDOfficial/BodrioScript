@@ -97,7 +97,7 @@ class Tokenizer
 
                 var res:String = '';
 
-                while (source.length > 0)
+                while (source.length > 0 && source[0] != quote)
                 {
                     var minRes:String = source.shift();
 
@@ -133,12 +133,11 @@ class Tokenizer
                     }
                 }
 
-                source.shift();
+                if (source.shift() != quote)
+                    throw 'Expected ' + quote;
 
                 tokens.push(TString(res));
             } else {
-                trace(tokens);
-
                 throw 'Unexpected Token: ' + source[0];
             }
         }
