@@ -23,7 +23,7 @@ class Main
             if ((input ?? '').trim() == '')
                 break;
 
-            Sys.println((Tokenizer.tokenize(input)));
+            Sys.println(parser.produceAST(Tokenizer.tokenize(input)));
         }
     }
 }

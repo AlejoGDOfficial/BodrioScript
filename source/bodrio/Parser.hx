@@ -26,9 +26,9 @@ class Parser
         return switch (at())
         {
             case TEof:
-                true;
+                false;
             default:
-                false; 
+                true; 
         }
     }
 
