@@ -6,14 +6,8 @@ enum Token {
     TString(string:String);
     TNumber(float:Float);
     TIdent(string:String);
-    TPlus;
-    TMinus;
-    TStar;
-    TSlash;
+    TBinOp(sym:String);
     TEqual;
-    TEqualEqual;
-    TPlusEqual;
-    TMinusEqual;
     TColon;
     TSemicolon;
     TLeftParen;
@@ -29,111 +23,90 @@ class Tokenizer
     static final spaceReg:EReg = ~/[\s]/;
 
     static final operators:Map<String, Token> = [
-        '==' => TEqualEqual,
-        '+=' => TPlusEqual,
-        '-=' => TMinusEqual,
-        '=' => TEqual,
-        '+' => TPlus,
-        '-' => TMinus,
-        '*' => TStar,
-        '/' => TSlash,
         ':' => TColon,
         ';' => TSemicolon,
         '(' => TLeftParen,
-        ')' => TRightParen
+        ')' => TRightParen,
+        '=' => TEqual
     ];
 
-    public static function tokenize(base:String):Array<Token> {
+    static final binOps:Array<String> = [
+        '==',
+        '+=',
+        '-=',
+        '+',
+        '-',
+        '*',
+        '/'
+    ];
+
+    public static function tokenize(sourceCode:String):Array<Token> {
+        final source:Array<String> = sourceCode.split('');
+
         var tokens:Array<Token> = [];
 
-        var i:Int = 0;
-
-        var maxOp = 0;
-
-        for (str in operators.keys())
-            if (str.length > maxOp)
-                maxOp = str.length;
-
-        while (i < base.length)
+        while (source.length > 0)
         {
-            var opMatch:Bool = false;
-
-            for (baseLength in 0...maxOp)
+            if (spaceReg.match(source[0]))
             {
-                var length:Int = maxOp - baseLength;
+                source.shift();
 
-                var result:Token = operators.get(base.substr(i, length));
+                continue;
+            }
 
-                if (result != null)
+            var binRes:String = readAhead(source, binOps);
+
+            if (binRes != null)
+            {
+                tokens.push(TBinOp(binRes));
+
+                continue;
+            }
+
+            var opRes:String = readAhead(source, [for (k in operators.keys()) k]);
+
+            if (opRes != null)
+            {
+                tokens.push(operators[opRes]);
+                
+                continue;
+            }
+
+            if (alphaReg.match(source[0]))
+            {
+                var res:String = '';
+
+                while (source.length > 0 && alphaNumericReg.match(source[0]))
+                    res += source.shift();
+
+                tokens.push(TIdent(res));
+            } else if (numericReg.match(source[0])) {
+                var res:String = '';
+
+                while (source.length > 0 && numericReg.match(source[0]))
+                    res += source.shift();
+
+                tokens.push(TNumber(Std.parseFloat(res)));
+            } else if (['"', '\''].contains(source[0])) {
+                var quote:String = source.shift();
+
+                var res:String = '';
+
+                while (source.length > 0)
                 {
-                    tokens.push(result);
+                    var minRes:String = source.shift();
 
-                    i += length;
+                    if (source.length <= 0)
+                        throw 'Expected ' + quote;
 
-                    opMatch = true;
-
-                    break;
-                }
-            }
-            
-            if (opMatch)
-                continue;
-
-            var cur:String = base.charAt(i);
-
-            if (spaceReg.match(cur))
-            {
-                i++;
-
-                continue;
-            }
-
-            if (alphaReg.match(cur))
-            {
-                var str:String = '';
-
-                while (i < base.length && alphaNumericReg.match(base.charAt(i)))
-                    str += base.charAt(i++);
-
-                tokens.push(TIdent(str));
-
-                continue;
-            }
-
-            if (numReg.match(cur))
-            {
-                var str:String = '';
-
-                while (i < base.length && numericReg.match(base.charAt(i)))
-                    str += base.charAt(i++);
-
-                tokens.push(TNumber(Std.parseFloat(str)));
-
-                continue;
-            }
-
-            if (['\'', '"'].contains(cur))
-            {
-                var quote = cur;
-
-                var str:String = '';
-
-                i++;
-
-                while (i < base.length)
-                {
-                    var char:String = base.charAt(i);
-
-                    if (char == '\\')
+                    if (minRes == '\\')
                     {
-                        i++;
+                        var next:String = source.shift();
 
-                        if (i >= base.length)
-                            throw 'Unfinished escape';
+                        if (source.length <= 0)
+                            throw 'Expected ' + quote;
 
-                        var next:String = base.charAt(i);
-
-                        str += switch (next)
+                        res += switch (next)
                         {
                             case '"':
                                 '"';
@@ -148,25 +121,47 @@ class Tokenizer
                             default:
                                 next;
                         }
-                    } else if (char == quote) {
-                        i++;
-
+                    } else if (minRes == quote) {
                         break;
                     } else {
-                        str += char;
+                        res += minRes;
                     }
-
-                    i++;
                 }
 
-                tokens.push(TString(str));
+                source.shift();
 
-                continue;
+                tokens.push(TString(res));
+            } else {
+                trace(tokens);
+
+                throw 'Unexpected Token: ' + source[0];
             }
+        }
+        
+        return tokens;
+    }
 
-            throw 'Unexpected token ${base.charAt(i)}';
+    static function readAhead(source:Array<String>, map:Array<String>):Null<String>
+    {
+        var max = 0;
+        
+        for (element in map)
+            if (element.length > max)
+                max = element.length;
+
+        for (len in 0...max + 1)
+        {
+            var substr = source.slice(0, len).join('');
+
+            if (map.contains(substr))
+            {
+                for (i in 0...len)
+                    source.shift();
+
+                return substr;
+            }
         }
 
-        return tokens;
+        return null;
     }
 }

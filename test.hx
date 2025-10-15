@@ -1,4 +1,4 @@
-var oso:String = 'oso';
+var oso:String = 'os\'o';
 
 oso += 'oso';
 
