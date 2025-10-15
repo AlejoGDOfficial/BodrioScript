@@ -1,6 +1,12 @@
 package;
 
-import bodrio.*;
+import bodrio.Tokenizer;
+import bodrio.Tokenizer.Token;
+
+import bodrio.Parser;
+import bodrio.Parser.Expr;
+
+import bodrio.Interp;
 
 import haxe.Json;
 
@@ -23,21 +29,13 @@ class Main
             if ((input ?? '').trim() == '')
                 break;
 
-            var tokens:Array<Tokenizer.Token> = Tokenizer.tokenize(input);
+            var tokens:Array<Token> = Tokenizer.tokenize(input);
 
-            prettyArrayPrint('Tokens', tokens);
+            var ast:Expr = parser.produceAST(tokens);
 
-            var ast:Array<Parser.Expr> = parser.produceAST(tokens);
+            final result:Dynamic = Interp.eval(ast);
 
-            prettyArrayPrint('AST', ast);
+            trace(result);
         }
-    }
-
-    static function prettyArrayPrint<T>(title:String, array:Array<T>)
-    {
-        Sys.println('\n- ' + title + ':');
-
-        for (obj in array)
-            Sys.println('    ' + obj);
     }
 }

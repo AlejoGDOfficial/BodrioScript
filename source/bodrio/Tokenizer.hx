@@ -4,8 +4,11 @@ using StringTools;
 
 enum Token {
     TString(string:String);
+
+    TVar;
+    TNull;
     
-    TNumber(float:Float);
+    TNumeric(float:Float);
     TIdent(string:String);
 
     TAdditiveOp(op:String);
@@ -23,7 +26,6 @@ enum Token {
 
 class Tokenizer
 {
-    static final numReg:EReg = ~/[0-9]/;
     static final numericReg:EReg = ~/[\d\.]/;
     static final alphaReg:EReg = ~/[a-zA-Z_]/;
     static final alphaNumericReg:EReg = ~/[\w]/;
@@ -43,6 +45,11 @@ class Tokenizer
         '*' => TMultiplicativeOp('*'),
         '/' => TMultiplicativeOp('/'),
         '%' => TMultiplicativeOp('%')
+    ];
+
+    static final keywords:Map<String, Token> = [
+        'var' => TVar,
+        'null' => TNull
     ];
 
     public static function tokenize(sourceCode:String):Array<Token> {
@@ -75,14 +82,17 @@ class Tokenizer
                 while (source.length > 0 && alphaNumericReg.match(source[0]))
                     res += source.shift();
 
-                tokens.push(TIdent(res));
+                if (keywords.exists(res))
+                    tokens.push(keywords[res]);
+                else
+                    tokens.push(TIdent(res));
             } else if (numericReg.match(source[0])) {
                 var res:String = '';
 
                 while (source.length > 0 && numericReg.match(source[0]))
                     res += source.shift();
 
-                tokens.push(TNumber(Std.parseFloat(res)));
+                tokens.push(TNumeric(Std.parseFloat(res)));
             } else if (['"', '\''].contains(source[0])) {
                 var quote:String = source.shift();
 

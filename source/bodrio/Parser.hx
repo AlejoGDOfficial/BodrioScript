@@ -4,9 +4,14 @@ import bodrio.Tokenizer;
 
 enum Expr
 {
+    EProgram(body:Array<Expr>);
+
     EBinaryExpr(left:Expr, op:String, rigth:Expr);
-    EIdentifier(symbol:String);
-    ENumericLiteral(value:Float);
+    ENumeric(value:Float);
+
+    EIdent(symbol:String);
+
+    ENull;
 }
 
 class Parser
@@ -21,18 +26,20 @@ class Parser
     function next():Token
         return tokens.shift();
 
-    function notEof():Bool
+    function expect(base:Token, err:String):Token
     {
-        return switch (at())
-        {
-            case TEof:
-                false;
-            default:
-                true; 
-        }
+        var tk:Token = next();
+
+        if (tk == null || Type.enumIndex(tk) != Type.enumIndex(base))
+            throw 'Expected token: ' + err;
+
+        return tk;
     }
 
-    public function produceAST(tokens:Array<Token>):Array<Expr>
+    function notEof():Bool
+        return !at().match(TEof);
+
+    public function produceAST(tokens:Array<Token>):Expr
     {
         this.tokens = tokens;
 
@@ -41,7 +48,7 @@ class Parser
         while (notEof())
             ast.push(parseStatement());
 
-        return ast;
+        return EProgram(ast);
     }
 
     function parseStatement():Expr
@@ -111,11 +118,23 @@ class Parser
             case TIdent(val):
                 next();
 
-                return EIdentifier(val);
-            case TNumber(val):
+                return EIdent(val);
+            case TNull:
                 next();
 
-                return ENumericLiteral(val);
+                return ENull;
+            case TNumeric(val):
+                next();
+
+                return ENumeric(val);
+            case TOpenParen:
+                next();
+
+                final value:Expr = parseExpr();
+
+                expect(TCloseParen, ')');
+
+                return value;
             default:
                 throw 'Unexpected Token: ' + tk;
         }
