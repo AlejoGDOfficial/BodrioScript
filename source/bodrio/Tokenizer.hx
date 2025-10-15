@@ -4,14 +4,19 @@ using StringTools;
 
 enum Token {
     TString(string:String);
+    
     TNumber(float:Float);
     TIdent(string:String);
+
     TBinOp(sym:String);
     TEqual;
+    TOpenParen;
+    TCloseParen;
+
     TColon;
     TSemicolon;
-    TLeftParen;
-    TRightParen;
+
+    TEof;
 }
 
 class Tokenizer
@@ -25,8 +30,8 @@ class Tokenizer
     static final operators:Map<String, Token> = [
         ':' => TColon,
         ';' => TSemicolon,
-        '(' => TLeftParen,
-        ')' => TRightParen,
+        '(' => TOpenParen,
+        ')' => TCloseParen,
         '=' => TEqual
     ];
 
@@ -138,6 +143,8 @@ class Tokenizer
             }
         }
         
+        tokens.push(TEof);
+
         return tokens;
     }
 
