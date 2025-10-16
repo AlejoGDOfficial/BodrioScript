@@ -8,6 +8,8 @@ import bodrio.Parser.Expr;
 
 import bodrio.Interp;
 
+import bodrio.Environment;
+
 import haxe.Json;
 
 using StringTools;
@@ -16,7 +18,11 @@ class Main
 {
     static function main()
     {
-        var parser:Parser = new Parser();
+        final parser:Parser = new Parser();
+
+        final env:Environment = new Environment();
+
+        env.declareVar('oso', VNumeric(100));
 
         Sys.println('\nBodrioScript v0.1');
 
@@ -29,13 +35,35 @@ class Main
             if ((input ?? '').trim() == '')
                 break;
 
-            var tokens:Array<Token> = Tokenizer.tokenize(input);
+            try
+            {
+                var tokens:Array<Token> = Tokenizer.tokenize(input);
 
-            var ast:Expr = parser.produceAST(tokens);
+                prettyArrayPrint('Tokens', tokens);            
 
-            final result:Dynamic = Interp.eval(ast);
+                var ast:Expr = parser.produceAST(tokens);
 
-            trace(result);
+                switch (ast)
+                {
+                    case Expr.EProgram(body):
+                        prettyArrayPrint('AST', body);
+                    default:
+                }
+
+                final result:Dynamic = Interp.eval(ast, env);
+
+                prettyArrayPrint('Result', [result]);
+            } catch(e) {
+                prettyArrayPrint('ERROR', [e.message]);
+            }
         }
+    }
+
+    static function prettyArrayPrint<T>(title:String, array:Array<T>)
+    {
+        Sys.println('\n- ' + title + ':');
+
+        for (obj in array)
+            Sys.println('    ' + obj);
     }
 }

@@ -2,19 +2,19 @@ package bodrio;
 
 using StringTools;
 
-enum Token {
-    TString(string:String);
-
+enum Token
+{
     TVar;
-    TNull;
     
     TNumeric(float:Float);
     TIdent(string:String);
+    TString(string:String);
 
     TAdditiveOp(op:String);
     TMultiplicativeOp(op:String);
 
     TEqual;
+    
     TOpenParen;
     TCloseParen;
 
@@ -48,8 +48,7 @@ class Tokenizer
     ];
 
     static final keywords:Map<String, Token> = [
-        'var' => TVar,
-        'null' => TNull
+        'var' => TVar
     ];
 
     public static function tokenize(sourceCode:String):Array<Token> {

@@ -119,10 +119,6 @@ class Parser
                 next();
 
                 return EIdent(val);
-            case TNull:
-                next();
-
-                return ENull;
             case TNumeric(val):
                 next();
 

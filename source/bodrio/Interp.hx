@@ -2,6 +2,8 @@ package bodrio;
 
 import bodrio.Parser;
 
+import bodrio.Environment;
+
 enum Value
 {
     VNull;
@@ -10,7 +12,7 @@ enum Value
 
 class Interp
 {
-    static function evalProgram(program:Expr):Value
+    static function evalProgram(program:Expr, env:Environment):Value
     {
         var lastEval:Value = VNull;
 
@@ -18,7 +20,7 @@ class Interp
         {
             case EProgram(body):
                 for (statement in body)
-                    lastEval = eval(statement);
+                    lastEval = eval(statement, env);
             default:
         }
 
@@ -42,7 +44,7 @@ class Interp
             default:
                 0;
         }
-
+        
         return VNumeric(
             switch (op)
             {
@@ -62,15 +64,15 @@ class Interp
         );
     }
 
-    static function evalBinaryExpr(binop:Expr):Value
+    static function evalBinaryExpr(binop:Expr, env:Environment):Value
     {
         switch (binop)
         {
             case EBinaryExpr(left, op, right):
-                final lhs:Value = eval(left);
-                final rhs:Value = eval(right);
+                final lhs:Value = eval(left, env);
+                final rhs:Value = eval(right, env);
 
-                if (lhs.match(VNumeric(0)) && rhs.match(VNumeric(0)))
+                if (lhs.match(VNumeric(_)) && rhs.match(VNumeric(_)))
                     return evalNumericBinaryExpr(lhs, op, rhs);
             default:
         }
@@ -78,18 +80,31 @@ class Interp
         return VNull;
     }
 
-    public static function eval(expr:Expr):Value
+    static function evalIdentifier(iden:Expr, env:Environment):Value
+    {
+        return switch (iden)
+        {
+            case EIdent(id):
+                env.lookupVar(id);
+            default:
+                VNull;
+        }
+    }
+
+    public static function eval(expr:Expr, env:Environment):Value
     {
         switch (expr)
         {
             case ENumeric(val):
                 return VNumeric(val);
             case EBinaryExpr(left, oper, right):
-                return evalBinaryExpr(expr);
+                return evalBinaryExpr(expr, env);
             case ENull:
                 return VNull;
             case EProgram(body):
-                return evalProgram(expr);
+                return evalProgram(expr, env);
+            case EIdent(id):
+                return evalIdentifier(expr, env);
             default:
                 throw 'Unexpected expression: ' + expr;
         }
