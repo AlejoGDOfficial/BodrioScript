@@ -5,6 +5,7 @@ using StringTools;
 enum Token
 {
     TVar;
+    TFinal;
     
     TNumeric(float:Float);
     TString(string:String);
@@ -48,7 +49,8 @@ class Tokenizer
     ];
 
     static final keywords:Map<String, Token> = [
-        'var' => TVar
+        'var' => TVar,
+        'final' => TFinal
     ];
 
     public static function tokenize(sourceCode:String):Array<Token> {

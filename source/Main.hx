@@ -12,20 +12,29 @@ import bodrio.Environment;
 
 import haxe.Json;
 
+import sys.io.File;
+
 using StringTools;
 
 class Main
 {
     static function main()
     {
+        Sys.println('\nBodrioScript v0.1');
+
         final parser:Parser = new Parser();
 
         final env:Environment = new Environment();
 
-        env.declareVar('oso', 100);
+        env.declareVar('x', 100);
 
-        Sys.println('\nBodrioScript v0.1');
+        //fileTest('test', parser, env);
 
+        inputTest(parser, env);
+    }
+
+    static function inputTest(parser:Parser, env:Environment)
+    {
         while (true)
         {
             Sys.print('\n> ');
@@ -35,27 +44,37 @@ class Main
             if ((input ?? '').trim() == '')
                 break;
 
-            try
+            execute(input, parser, env);
+        }
+    }
+
+    static function fileTest(path:String, parser:Parser, env:Environment)
+    {
+        execute(File.getContent(path + '.hx'), parser, env);
+    }
+
+    static function execute(code:String, parser:Parser, env:Environment)
+    {
+        try
+        {
+            var tokens:Array<Token> = Tokenizer.tokenize(code);
+
+            prettyArrayPrint('Tokens', tokens);            
+
+            var ast:Expr = parser.produceAST(tokens);
+
+            switch (ast)
             {
-                var tokens:Array<Token> = Tokenizer.tokenize(input);
-
-                prettyArrayPrint('Tokens', tokens);            
-
-                var ast:Expr = parser.produceAST(tokens);
-
-                switch (ast)
-                {
-                    case Expr.EProgram(body):
-                        prettyArrayPrint('AST', body);
-                    default:
-                }
-
-                final result:Dynamic = Interp.eval(ast, env);
-
-                prettyArrayPrint('Result', [result]);
-            } catch(e) {
-                prettyArrayPrint('ERROR', [e.message]);
+                case Expr.EProgram(body):
+                    prettyArrayPrint('AST', body);
+                default:
             }
+
+            final result:Dynamic = Interp.eval(ast, env);
+
+            prettyArrayPrint('Result', [result]);
+        } catch(e) {
+            prettyArrayPrint('ERROR', [e.message]);
         }
     }
 
