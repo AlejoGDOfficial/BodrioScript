@@ -26,11 +26,10 @@ class Main
 
         final env:Environment = new Environment();
 
-        env.declareVar('x', 100);
-
-        //fileTest('test', parser, env);
-
-        inputTest(parser, env);
+        if (false)
+            fileTest('test', parser, env);
+        else
+            inputTest(parser, env);
     }
 
     static function inputTest(parser:Parser, env:Environment)

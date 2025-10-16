@@ -58,12 +58,40 @@ class Interp
 
     static function evalIdentifier(iden:Expr, env:Environment):Dynamic
     {
-        return switch (iden)
+        switch (iden)
         {
             case EIdent(id):
-                env.lookupVar(id);
+                return env.lookupVar(id);
             default:
-                null;
+                return null;
+        }
+    }
+
+    static function evalVarDecl(eVar:Expr, env:Environment):Dynamic
+    {
+        switch(eVar)
+        {
+            case EVarDecl(isConstant, id, val):
+                return env.declareVar(id, val == null ? null : eval(val, env), isConstant);
+            default:
+                return null;
+        }
+    }
+
+    static function evalVarAssign(eVar:Expr, env:Environment):Dynamic
+    {
+        switch (eVar)
+        {
+            case EVarAssign(assigne, value):
+                switch (assigne)
+                {
+                    case EIdent(id):
+                        return env.assignVar(id, eval(value, env));
+                    default:
+                        throw 'Invalid assigne: ' + assigne;
+                }
+            default:
+                return null;
         }
     }
 
@@ -75,12 +103,14 @@ class Interp
                 return val;
             case EBinaryExpr(left, oper, right):
                 return evalBinaryExpr(expr, env);
-            case ENull:
-                return null;
             case EProgram(body):
                 return evalProgram(expr, env);
             case EIdent(id):
                 return evalIdentifier(expr, env);
+            case EVarDecl(isConstant, id, val):
+                return evalVarDecl(expr, env);
+            case EVarAssign(asiggne, value):
+                return evalVarAssign(expr, env);
             default:
                 throw 'Unexpected expression: ' + expr;
         }

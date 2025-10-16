@@ -6,12 +6,13 @@ enum Expr
 {
     EProgram(body:Array<Expr>);
 
+    EVarDecl(constant:Bool, id:String, ?value:Expr);
+    EVarAssign(asiggne:Expr, value:Expr);
+
     EBinaryExpr(left:Expr, op:String, rigth:Expr);
     ENumeric(value:Float);
 
     EIdent(symbol:String);
-
-    ENull;
 }
 
 class Parser
@@ -53,12 +54,64 @@ class Parser
 
     function parseStatement():Expr
     {
-        return parseExpr();
+        switch(at())
+        {
+            case TVar, TFinal:
+                return parseVarDecl();
+            default:
+                return parseExpr();
+        }
+    }
+
+    function parseVarDecl():Expr
+    {
+        final isConstant:Bool = next().match(TFinal);
+        final id:String = switch (expect(TIdent(''), 'identifier'))
+        {
+            case TIdent(name):
+                name;
+            default:
+                null;
+        }
+
+        if (at().match(TSemicolon))
+        {
+            next();
+
+            if (isConstant)
+                throw 'Must assigne avalue to final expression';
+
+            return EVarDecl(true, id, null);
+        }
+
+        expect(TEqual, '=');
+
+        final declaration = EVarDecl(isConstant, id, parseExpr());
+
+        expect(TSemicolon, ';');
+
+        return declaration;
     }
 
     function parseExpr():Expr
     {
-        return parseAdditiveExpr();
+        return parseAssignExpr();
+    }
+
+    function parseAssignExpr():Expr
+    {
+        final left:Expr = parseAdditiveExpr();
+
+        if (at().match(TEqual))
+        {
+            next();
+
+            final value:Expr = parseAdditiveExpr();
+
+            return EVarAssign(left, value);
+        }
+
+        return left;
     }
     
     function parseAdditiveExpr():Expr
@@ -132,7 +185,7 @@ class Parser
 
                 return value;
             default:
-                throw 'Unexpected Token: ' + tk;
+                throw 'Unexpected Token Type: ' + tk;
         }
     }
 }

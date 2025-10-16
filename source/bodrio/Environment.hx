@@ -8,28 +8,39 @@ class Environment
 {
     public var parent:Null<Environment>;
 
-    public var variables:Map<String, Dynamic>;
+    public var variables:Map<String, Dynamic> = new Map();
+    public var constants:Map<String, Dynamic> = new Map();
 
     public function new(?par:Environment)
     {
         parent = par;
 
-        variables = new Map();
+        declareVar('true', true, true);
+        declareVar('false', false, true);
+        declareVar('null', null, true);
     }
 
-    public function declareVar(name:String, val:Dynamic):Dynamic
+    public function declareVar(name:String, val:Dynamic, isConstant:Bool):Dynamic
     {
         if (variables.exists(name))
             throw 'Duplicate class field declaration: ' + name;
 
         variables.set(name, val);
 
+        if (isConstant)
+            constants.set(name, val);
+
         return val;
     }
 
     public function assignVar(name:String, val:Dynamic):Dynamic
     {
-        this.resolve(name).variables.set(name, val);
+        final env:Environment = this.resolve(name);
+
+        if (env.constants.exists(name))
+            throw 'Cannot reasign a final variable';
+
+        env.variables.set(name, val);
 
         return val;
     }
