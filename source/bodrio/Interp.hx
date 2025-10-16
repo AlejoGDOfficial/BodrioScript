@@ -4,17 +4,11 @@ import bodrio.Parser;
 
 import bodrio.Environment;
 
-enum Value
-{
-    VNull;
-    VNumeric(val:Float);
-}
-
 class Interp
 {
-    static function evalProgram(program:Expr, env:Environment):Value
+    static function evalProgram(program:Expr, env:Environment):Dynamic
     {
-        var lastEval:Value = VNull;
+        var lastEval:Dynamic = null;
 
         switch (program)
         {
@@ -27,80 +21,62 @@ class Interp
         return lastEval;
     }
 
-    static function evalNumericBinaryExpr(lhs:Value, op:String, rhs:Value):Value
-    {
-        var left:Float = switch (lhs)
+    static function evalNumericBinaryExpr(left:Float, op:String, right:Float):Float
+    {   
+        return switch (op)
         {
-            case VNumeric(val):
-                val;
+            case '+':
+                left + right;
+            case '-':
+                left - right;
+            case '*':
+                left * right;
+            case '/':
+                left / right;
+            case '%':
+                left % right;
             default:
                 0;
-        }
-
-        var right:Float = switch (rhs)
-        {
-            case VNumeric(val):
-                val;
-            default:
-                0;
-        }
-        
-        return VNumeric(
-            switch (op)
-            {
-                case '+':
-                    left + right;
-                case '-':
-                    left - right;
-                case '*':
-                    left * right;
-                case '/':
-                    left / right;
-                case '%':
-                    left % right;
-                default:
-                    0;
-            }
-        );
+        };
     }
 
-    static function evalBinaryExpr(binop:Expr, env:Environment):Value
+    static function evalBinaryExpr(binop:Expr, env:Environment):Dynamic
     {
         switch (binop)
         {
             case EBinaryExpr(left, op, right):
-                final lhs:Value = eval(left, env);
-                final rhs:Value = eval(right, env);
+                final lhs:Dynamic = eval(left, env);
+                final rhs:Dynamic = eval(right, env);
 
-                if (lhs.match(VNumeric(_)) && rhs.match(VNumeric(_)))
+                if (lhs is Float && rhs is Float)
                     return evalNumericBinaryExpr(lhs, op, rhs);
             default:
         }
 
-        return VNull;
+        return null;
     }
 
-    static function evalIdentifier(iden:Expr, env:Environment):Value
+    static function evalIdentifier(iden:Expr, env:Environment):Dynamic
     {
         return switch (iden)
         {
             case EIdent(id):
                 env.lookupVar(id);
             default:
-                VNull;
+                null;
         }
     }
 
-    public static function eval(expr:Expr, env:Environment):Value
+    public static function eval(expr:Expr, env:Environment):Dynamic
     {
         switch (expr)
         {
             case ENumeric(val):
-                return VNumeric(val);
+                return val;
             case EBinaryExpr(left, oper, right):
                 return evalBinaryExpr(expr, env);
             case ENull:
-                return VNull;
+                return null;
             case EProgram(body):
                 return evalProgram(expr, env);
             case EIdent(id):

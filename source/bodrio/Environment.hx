@@ -3,13 +3,12 @@ package bodrio;
 import bodrio.Parser;
 
 import bodrio.Interp;
-import bodrio.Interp.Value;
 
 class Environment
 {
     public var parent:Null<Environment>;
 
-    public var variables:Map<String, Value>;
+    public var variables:Map<String, Dynamic>;
 
     public function new(?par:Environment)
     {
@@ -18,7 +17,7 @@ class Environment
         variables = new Map();
     }
 
-    public function declareVar(name:String, val:Value):Value
+    public function declareVar(name:String, val:Dynamic):Dynamic
     {
         if (variables.exists(name))
             throw 'Duplicate class field declaration: ' + name;
@@ -28,14 +27,14 @@ class Environment
         return val;
     }
 
-    public function assignVar(name:String, val:Value):Value
+    public function assignVar(name:String, val:Dynamic):Dynamic
     {
         this.resolve(name).variables.set(name, val);
 
         return val;
     }
 
-    public function lookupVar(name:String):Value
+    public function lookupVar(name:String):Dynamic
         return this.resolve(name).variables.get(name);
 
     public function resolve(name:String):Environment

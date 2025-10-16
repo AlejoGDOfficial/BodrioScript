@@ -22,7 +22,7 @@ class Main
 
         final env:Environment = new Environment();
 
-        env.declareVar('oso', VNumeric(100));
+        env.declareVar('oso', 100);
 
         Sys.println('\nBodrioScript v0.1');
 

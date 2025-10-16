@@ -7,8 +7,8 @@ enum Token
     TVar;
     
     TNumeric(float:Float);
-    TIdent(string:String);
     TString(string:String);
+    TIdent(string:String);
 
     TAdditiveOp(op:String);
     TMultiplicativeOp(op:String);
