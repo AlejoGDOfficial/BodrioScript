@@ -10,9 +10,12 @@ enum Expr
     EVarAssign(assigne:Expr, value:Expr);
     EMemberExpr(obj:Expr, prop:Expr, computed:Bool);
     ECallExpr(caller:Expr, args:Array<Expr>);
+    EFuncDecl(name:String, params:Array<String>, body:Array<Expr>);
+
+    ENumeric(value:Float);
+    EString(value:String);
 
     EBinaryExpr(left:Expr, op:String, right:Expr);
-    ENumeric(value:Float);
     EProperty(key:String, ?value:Expr);
     EObject(props:Array<Expr>);
 
@@ -62,9 +65,54 @@ class Parser
         {
             case TVar, TFinal:
                 return parseVarDecl();
+            case TFunc:
+                return parseFuncDecl();
             default:
                 return parseExpr();
         }
+    }
+
+    function parseFuncDecl():Expr
+    {
+        next();
+
+        final name:String = switch(expect(TIdent(''), 'identifier'))
+        {
+            case TIdent(id):
+                id;
+            default:
+                null;
+        };
+
+        final args:Array<Expr> = parseArgs();
+
+        final params:Array<String> = [];
+
+        for (arg in args)
+        {
+            switch (arg)
+            {
+                case EIdent(id):
+                    params.push(id);
+                default:
+                    throw 'Expected identifier';
+            }
+        }
+
+        expect(TOpenBrace, '{');
+
+        final body:Array<Expr> = [];
+
+        while (notEof() && !at().match(TCloseBrace))
+        {
+            body.push(parseStatement());
+        }
+
+        expect(TCloseBrace, '}');
+
+        final func:Expr = EFuncDecl(name, params, body);
+
+        return func;
     }
 
     function parseVarDecl():Expr
@@ -120,14 +168,14 @@ class Parser
 
     function parseObjectExpr():Expr
     {
-        if (!at().match(TOpenBracket))
+        if (!at().match(TOpenBrace))
             return parseAdditiveExpr();
 
         next();
 
         final props:Array<Expr> = [];
 
-        while (notEof() && !at().match(TCloseBracket))
+        while (notEof() && !at().match(TCloseBrace))
         {
             final key:String = switch (expect(TIdent(''), 'ident'))
             {
@@ -137,7 +185,7 @@ class Parser
                     null;
             }
 
-            if (at().match(TCloseBracket))
+            if (at().match(TCloseBrace))
             {
                 props.push(EProperty(key, null));
 
@@ -150,13 +198,13 @@ class Parser
 
             props.push(EProperty(key, value));
 
-            if (!at().match(TCloseBracket))
+            if (!at().match(TCloseBrace))
             {
                 expect(TComma, ',');
             }
         }
 
-        expect(TCloseBracket, ']');
+        expect(TCloseBrace, ']');
 
         return EObject(props);
     }
@@ -297,6 +345,10 @@ class Parser
                 next();
 
                 return ENumeric(val);
+            case TString(val):
+                next();
+
+                return EString(val);
             case TOpenParen:
                 next();
 

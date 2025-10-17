@@ -6,6 +6,7 @@ enum Token
 {
     TVar;
     TFinal;
+    TFunc;
     
     TNumeric(float:Float);
     TString(string:String);
@@ -47,10 +48,10 @@ class Tokenizer
         ',' => TComma,
         '(' => TOpenParen,
         ')' => TCloseParen,
-        '{' => TOpenBracket,
-        '}' => TCloseBracket,
-        '[' => TOpenBrace,
-        ']' => TCloseBrace,
+        '[' => TOpenBracket,
+        ']' => TCloseBracket,
+        '{' => TOpenBrace,
+        '}' => TCloseBrace,
         '.' => TDot,
         '=' => TEqual,
         '+' => TAdditiveOp('+'),
@@ -62,7 +63,8 @@ class Tokenizer
 
     static final keywords:Map<String, Token> = [
         'var' => TVar,
-        'final' => TFinal
+        'final' => TFinal,
+        'function' => TFunc
     ];
 
     public static function tokenize(sourceCode:String):Array<Token> {

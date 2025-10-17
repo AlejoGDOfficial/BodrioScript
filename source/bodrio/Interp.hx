@@ -22,7 +22,7 @@ class Interp
     }
 
     static function evalNumericBinaryExpr(left:Float, op:String, right:Float):Float
-    {   
+    {
         return switch (op)
         {
             case '+':
@@ -36,7 +36,18 @@ class Interp
             case '%':
                 left % right;
             default:
-                0;
+                throw 'Invalid Operation ' + op;
+        };
+    }
+
+    static function evalStringBinaryExpr(left:Dynamic, op:String, right:Dynamic):String
+    {
+        return switch (op)
+        {
+            case '+':
+                Std.string(left) + Std.string(right);
+            default:
+                throw 'Invalid Operation ' + op;
         };
     }
 
@@ -48,8 +59,13 @@ class Interp
                 final lhs:Dynamic = eval(left, env);
                 final rhs:Dynamic = eval(right, env);
 
-                if ((lhs is Float || lhs is Int) && (rhs is Float || rhs is Int))
+                function is(cls:Dynamic)
+                    return Std.isOfType(lhs, cls) && Std.isOfType(rhs, cls);
+                
+                if (is(Int) && is(Float))
                     return evalNumericBinaryExpr(lhs, op, rhs);
+
+                return evalStringBinaryExpr(lhs, op, rhs);
             default:
         }
 
@@ -97,7 +113,7 @@ class Interp
 
     static function evalObjectExpr(eObj:Expr, env:Environment):Map<String, Dynamic>
     {
-        final obj:Map<String, Dynamic> = new Map();
+        final obj:Dynamic = {};
 
         switch (eObj)
         {
@@ -107,7 +123,7 @@ class Interp
                     switch (prop)
                     {
                         case EProperty(key, val):
-                            obj.set(key, eval(val, env));
+                            Reflect.setField(obj, key, eval(val, env));
                         default:
                             return null;
                     }
@@ -131,10 +147,48 @@ class Interp
 
                 final func:Dynamic = eval(caller, env);
 
-                if (!Reflect.isFunction(func))
-                    throw 'Cannot call a value that\'s not a function';
+                if (func is Expr)
+                {
+                    switch (func)
+                    {
+                        case EFuncDecl(name, params, body):
+                            final scope:Environment = new Environment(env);
 
-                return Reflect.callMethod(null, func, vars);
+                            for (index => param in params)
+                                scope.declareVar(param, vars[index], false);
+
+                            var result:Dynamic = null;
+
+                            for (stat in body)
+                                result = eval(stat, scope);
+
+                            return result;
+                        default:
+                    }
+                } else if (Reflect.isFunction(func)) {
+                    return Reflect.callMethod(null, func, vars);
+                }
+
+                throw 'Cannot call a value that\'s not a function';
+            default:
+        }
+
+        return null;
+    }
+
+    static function evalMemberExpr(expr:Expr, env:Environment):Dynamic
+    {
+        switch (expr)
+        {
+            case EMemberExpr(left, right, computed):
+                final lhs:Dynamic = eval(left, env);
+
+                switch (right)
+                {
+                    case EIdent(id):
+                        return Reflect.getProperty(lhs, id);
+                    default:
+                }
             default:
         }
 
@@ -146,6 +200,8 @@ class Interp
         switch (expr)
         {
             case ENumeric(val):
+                return val;
+            case EString(val):
                 return val;
             case EBinaryExpr(left, oper, right):
                 return evalBinaryExpr(expr, env);
@@ -161,6 +217,10 @@ class Interp
                 return evalObjectExpr(expr, env);
             case ECallExpr(caller, args):
                 return evalCallExpr(expr, env);
+            case EFuncDecl(name, params, body):
+                return env.declareVar(name, expr, true);
+            case EMemberExpr(left, right, computed):
+                return evalMemberExpr(expr, env);
             default:
                 throw 'Unexpected expression: ' + expr;
         }

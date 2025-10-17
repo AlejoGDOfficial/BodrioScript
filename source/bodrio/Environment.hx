@@ -15,6 +15,14 @@ class Environment
     {
         parent = par;
 
+        final imports:Array<Class<Dynamic>> = [
+            Math,
+            Reflect
+        ];
+
+        for (cls in imports)
+            declareVar(Type.getClassName(cls), cls, true);
+
         final globalVariables:Map<String, Dynamic> = [
             'true' => true,
             'false' => false,
