@@ -15,9 +15,28 @@ class Environment
     {
         parent = par;
 
-        declareVar('true', true, true);
-        declareVar('false', false, true);
-        declareVar('null', null, true);
+        final globalVariables:Map<String, Dynamic> = [
+            'true' => true,
+            'false' => false,
+            'null' => null
+        ];
+
+        for (variable in globalVariables.keys())
+            declareVar(variable, globalVariables.get(variable), true);
+
+        final globalFunctions:Map<String, Dynamic> = [
+            'trace' => Reflect.makeVarArgs(
+                function (args:Array<Dynamic>)
+                {
+                    Sys.println(args.join(','));
+
+                    return null;
+                }
+            )
+        ];
+
+        for (func in globalFunctions.keys())
+            declareVar(func, globalFunctions.get(func), true);
     }
 
     public function declareVar(name:String, val:Dynamic, isConstant:Bool):Dynamic

@@ -119,6 +119,28 @@ class Interp
         return obj;
     }
 
+    static function evalCallExpr(expr:Expr, env:Environment):Map<String, Dynamic>
+    {
+        switch (expr)
+        {
+            case ECallExpr(caller, args):
+                final vars:Array<Dynamic> = [
+                    for (arg in args)
+                        eval(arg, env)
+                ];
+
+                final func:Dynamic = eval(caller, env);
+
+                if (!Reflect.isFunction(func))
+                    throw 'Cannot call a value that\'s not a function';
+
+                return Reflect.callMethod(null, func, vars);
+            default:
+        }
+
+        return null;
+    }
+
     public static function eval(expr:Expr, env:Environment):Dynamic
     {
         switch (expr)
@@ -137,6 +159,8 @@ class Interp
                 return evalVarAssign(expr, env);
             case EObject(props):
                 return evalObjectExpr(expr, env);
+            case ECallExpr(caller, args):
+                return evalCallExpr(expr, env);
             default:
                 throw 'Unexpected expression: ' + expr;
         }

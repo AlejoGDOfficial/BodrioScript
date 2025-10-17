@@ -1,0 +1,5 @@
+-cp source
+-main Main
+-D message.reporting=pretty
+-neko export\bin.n
+-cmd neko export\bin.n

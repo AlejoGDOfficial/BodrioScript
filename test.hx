@@ -1,4 +1,4 @@
-final foo = 50 / 2;
+var foo = 50 / 2;
 
 final obj = {
     x: 100,
@@ -9,6 +9,6 @@ final obj = {
     }
 };
 
-final f = obj.complex.per;
+trace()
 
-foo = obj.foo + 5
+trace(foo = 5, 10, 100, 10, obj)
