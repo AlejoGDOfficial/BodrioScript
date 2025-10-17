@@ -48,7 +48,7 @@ class Interp
                 final lhs:Dynamic = eval(left, env);
                 final rhs:Dynamic = eval(right, env);
 
-                if (lhs is Float && rhs is Float)
+                if ((lhs is Float || lhs is Int) && (rhs is Float || rhs is Int))
                     return evalNumericBinaryExpr(lhs, op, rhs);
             default:
         }
@@ -95,6 +95,30 @@ class Interp
         }
     }
 
+    static function evalObjectExpr(eObj:Expr, env:Environment):Map<String, Dynamic>
+    {
+        final obj:Map<String, Dynamic> = new Map();
+
+        switch (eObj)
+        {
+            case EObject(props):
+                for (prop in props)
+                {
+                    switch (prop)
+                    {
+                        case EProperty(key, val):
+                            obj.set(key, eval(val, env));
+                        default:
+                            return null;
+                    }
+                }
+            default:
+                return null;
+        }
+
+        return obj;
+    }
+
     public static function eval(expr:Expr, env:Environment):Dynamic
     {
         switch (expr)
@@ -111,6 +135,8 @@ class Interp
                 return evalVarDecl(expr, env);
             case EVarAssign(asiggne, value):
                 return evalVarAssign(expr, env);
+            case EObject(props):
+                return evalObjectExpr(expr, env);
             default:
                 throw 'Unexpected expression: ' + expr;
         }

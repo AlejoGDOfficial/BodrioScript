@@ -26,7 +26,7 @@ class Main
 
         final env:Environment = new Environment();
 
-        if (false)
+        if (true)
             fileTest('test', parser, env);
         else
             inputTest(parser, env);

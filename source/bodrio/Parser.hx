@@ -7,10 +7,14 @@ enum Expr
     EProgram(body:Array<Expr>);
 
     EVarDecl(constant:Bool, id:String, ?value:Expr);
-    EVarAssign(asiggne:Expr, value:Expr);
+    EVarAssign(assigne:Expr, value:Expr);
+    EMemberExpr(obj:Expr, prop:Expr, computed:Bool);
+    ECallExpr(caller:Expr, args:Array<Expr>);
 
-    EBinaryExpr(left:Expr, op:String, rigth:Expr);
+    EBinaryExpr(left:Expr, op:String, right:Expr);
     ENumeric(value:Float);
+    EProperty(key:String, ?value:Expr);
+    EObject(props:Array<Expr>);
 
     EIdent(symbol:String);
 }
@@ -100,18 +104,61 @@ class Parser
 
     function parseAssignExpr():Expr
     {
-        final left:Expr = parseAdditiveExpr();
+        final left:Expr = parseObjectExpr();
 
         if (at().match(TEqual))
         {
             next();
 
-            final value:Expr = parseAdditiveExpr();
+            final value:Expr = parseAssignExpr();
 
             return EVarAssign(left, value);
         }
 
         return left;
+    }
+
+    function parseObjectExpr():Expr
+    {
+        if (!at().match(TOpenBracket))
+            return parseAdditiveExpr();
+
+        next();
+
+        final props:Array<Expr> = [];
+
+        while (notEof() && !at().match(TCloseBracket))
+        {
+            final key:String = switch (expect(TIdent(''), 'ident'))
+            {
+                case TIdent(id):
+                    id;
+                default:
+                    null;
+            }
+
+            if (at().match(TCloseBracket))
+            {
+                props.push(EProperty(key, null));
+
+                continue;
+            }
+
+            expect(TColon, ':');
+
+            final value:Expr = parseExpr();
+
+            props.push(EProperty(key, value));
+
+            if (!at().match(TCloseBracket))
+            {
+                expect(TComma, ',');
+            }
+        }
+
+        expect(TCloseBracket, ']');
+
+        return EObject(props);
     }
     
     function parseAdditiveExpr():Expr
@@ -140,7 +187,7 @@ class Parser
 
     function parseMultiplicativeExpr():Expr
     {
-        var left:Expr = parsePrimaryExpr();
+        var left:Expr = parseCallMemberExpr();
 
         while (true)
         {
@@ -151,7 +198,7 @@ class Parser
                     
                     final oper:String = op;
 
-                    final right:Expr = parsePrimaryExpr();
+                    final right:Expr = parseCallMemberExpr();
 
                     left = EBinaryExpr(left, oper, right);
                 default:
@@ -160,6 +207,80 @@ class Parser
         }
 
         return left;
+    }
+
+    function parseCallMemberExpr():Expr
+    {
+        final member:Expr = parseMemberExpr();
+
+        if (at().match(TOpenParen))
+            return parseCallExpr(member);
+
+        return member;
+    }
+
+    function parseCallExpr(caller:Expr):Expr
+    {
+        var callExpr:Expr = ECallExpr(caller, parseArgs());
+
+        if (at().match(TOpenParen))
+            callExpr = parseCallExpr(callExpr);
+
+        return callExpr;
+    }
+
+    function parseArgs():Array<Expr>
+    {
+        expect(TOpenParen, '(');
+
+        final args:Array<Expr> = at().match(TCloseParen) ? [] : parseArgsList();
+
+        expect(TCloseParen, ')');
+
+        return args;
+    }
+
+    function parseArgsList():Array<Expr>
+    {
+        final args:Array<Expr> = [parseExpr()];
+
+        while (notEof() && at().match(TComma) && next() != null)
+        {
+            args.push(parseAssignExpr());
+        }
+
+        return args;
+    }
+
+    function parseMemberExpr():Expr
+    {
+        var obj:Expr = parsePrimaryExpr();
+
+        while (at().match(TDot) || at().match(TOpenBrace))
+        {
+            final op:Token = next();
+
+            var prop:Expr;
+            var computed:Bool;
+
+            if (op.match(TDot))
+            {
+                computed = false;
+                prop = parsePrimaryExpr();
+
+                if (!prop.match(EIdent(_)))
+                    throw 'Expected identifier';
+            } else {
+                computed = true;
+                prop = parseExpr();
+
+                expect(TCloseBrace, ']');
+            }
+            
+            obj = EMemberExpr(obj, prop, computed);
+        }
+
+        return obj;
     }
 
     function parsePrimaryExpr():Expr

@@ -1,7 +1,14 @@
-final oso = 10;
+final foo = 50 / 2;
 
-oso = 5;
+final obj = {
+    x: 100,
+    y: 200,
+    foo: foo,
+    complex: {
+        bar: true
+    }
+};
 
-final donde = 20;
+final f = obj.complex.per;
 
-oso * donde
+foo = obj.foo + 5

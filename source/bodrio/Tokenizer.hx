@@ -13,14 +13,20 @@ enum Token
 
     TAdditiveOp(op:String);
     TMultiplicativeOp(op:String);
-
-    TEqual;
     
     TOpenParen;
     TCloseParen;
+    TOpenBracket;
+    TCloseBracket;
+    TOpenBrace;
+    TCloseBrace;
 
     TColon;
+    TDot;
     TSemicolon;
+    TComma;
+
+    TEqual;
 
     TEof;
 }
@@ -33,19 +39,25 @@ class Tokenizer
     static final spaceReg:EReg = ~/[\s]/;
 
     static final operators:Map<String, Token> = [
-        '==' => null,
         '+=' => null,
         '-=' => null,
+        '==' => null,
         ':' => TColon,
         ';' => TSemicolon,
+        ',' => TComma,
         '(' => TOpenParen,
         ')' => TCloseParen,
+        '{' => TOpenBracket,
+        '}' => TCloseBracket,
+        '[' => TOpenBrace,
+        ']' => TCloseBrace,
+        '.' => TDot,
         '=' => TEqual,
         '+' => TAdditiveOp('+'),
         '-' => TAdditiveOp('-'),
         '*' => TMultiplicativeOp('*'),
         '/' => TMultiplicativeOp('/'),
-        '%' => TMultiplicativeOp('%')
+        '%' => TMultiplicativeOp('%'),
     ];
 
     static final keywords:Map<String, Token> = [
