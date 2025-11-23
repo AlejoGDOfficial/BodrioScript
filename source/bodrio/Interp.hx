@@ -14,7 +14,7 @@ class Interp
         {
             case EProgram(body):
                 for (statement in body)
-                    lastEval = eval(statement, env);
+                    lastEval = evaluate(statement, env);
             default:
         }
 
@@ -56,8 +56,8 @@ class Interp
         switch (binop)
         {
             case EBinaryExpr(left, op, right):
-                final lhs:Dynamic = eval(left, env);
-                final rhs:Dynamic = eval(right, env);
+                final lhs:Dynamic = evaluate(left, env);
+                final rhs:Dynamic = evaluate(right, env);
 
                 function is(cls:Dynamic)
                     return Std.isOfType(lhs, cls) && Std.isOfType(rhs, cls);
@@ -88,7 +88,7 @@ class Interp
         switch(eVar)
         {
             case EVarDecl(isConstant, id, val):
-                return env.declareVar(id, val == null ? null : eval(val, env), isConstant);
+                return env.declareVar(id, val == null ? null : evaluate(val, env), isConstant);
             default:
                 return null;
         }
@@ -102,7 +102,7 @@ class Interp
                 switch (assigne)
                 {
                     case EIdent(id):
-                        return env.assignVar(id, eval(value, env));
+                        return env.assignVar(id, evaluate(value, env));
                     default:
                         throw 'Invalid assigne: ' + assigne;
                 }
@@ -123,7 +123,7 @@ class Interp
                     switch (prop)
                     {
                         case EProperty(key, val):
-                            Reflect.setField(obj, key, eval(val, env));
+                            Reflect.setField(obj, key, evaluate(val, env));
                         default:
                             return null;
                     }
@@ -142,10 +142,10 @@ class Interp
             case ECallExpr(caller, args):
                 final vars:Array<Dynamic> = [
                     for (arg in args)
-                        eval(arg, env)
+                        evaluate(arg, env)
                 ];
 
-                final func:Dynamic = eval(caller, env);
+                final func:Dynamic = evaluate(caller, env);
 
                 if (func is Expr)
                 {
@@ -160,7 +160,7 @@ class Interp
                             var result:Dynamic = null;
 
                             for (stat in body)
-                                result = eval(stat, scope);
+                                result = evaluate(stat, scope);
 
                             return result;
                         default:
@@ -181,7 +181,7 @@ class Interp
         switch (expr)
         {
             case EMemberExpr(left, right, computed):
-                final lhs:Dynamic = eval(left, env);
+                final lhs:Dynamic = evaluate(left, env);
 
                 switch (right)
                 {
@@ -195,7 +195,29 @@ class Interp
         return null;
     }
 
-    public static function eval(expr:Expr, env:Environment):Dynamic
+    static function evalMemberAssign(expr:Expr, env:Environment):Dynamic
+    {
+        switch (expr)
+        {
+            case EMemberAssign(left, right, value):
+                Reflect.setField(
+                    left,
+                    switch (right)
+                    {
+                        case EIdent(id):
+                            id;
+                        default:
+                            null;
+                    },
+                    value
+                );
+            default:
+        }
+
+        return null;
+    }
+
+    public static function evaluate(expr:Expr, env:Environment):Dynamic
     {
         switch (expr)
         {
@@ -221,6 +243,8 @@ class Interp
                 return env.declareVar(name, expr, true);
             case EMemberExpr(left, right, computed):
                 return evalMemberExpr(expr, env);
+            case EMemberAssign(left, right, value):
+                return evalMemberAssign(expr, env);
             default:
                 throw 'Unexpected expression: ' + expr;
         }

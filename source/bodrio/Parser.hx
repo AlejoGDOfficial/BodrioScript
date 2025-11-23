@@ -9,6 +9,7 @@ enum Expr
     EVarDecl(constant:Bool, id:String, ?value:Expr);
     EVarAssign(assigne:Expr, value:Expr);
     EMemberExpr(obj:Expr, prop:Expr, computed:Bool);
+    EMemberAssign(left:Expr, right:Expr, value:Expr);
     ECallExpr(caller:Expr, args:Array<Expr>);
     EFuncDecl(name:String, params:Array<String>, body:Array<Expr>);
 
@@ -154,13 +155,19 @@ class Parser
     {
         final left:Expr = parseObjectExpr();
 
+        trace(left);
+
         if (at().match(TEqual))
         {
             next();
 
-            final value:Expr = parseAssignExpr();
-
-            return EVarAssign(left, value);
+            return switch (left)
+            {
+                case EMemberExpr(l, r, c):
+                    EMemberAssign(l, r, parseAssignExpr());
+                default:
+                    EVarAssign(left, parseAssignExpr());
+            }
         }
 
         return left;
@@ -358,7 +365,8 @@ class Parser
 
                 return value;
             default:
-                throw 'Unexpected Token Type: ' + tk;
         }
+        
+        throw 'Unexpected Token Type: ' + tk;
     }
 }

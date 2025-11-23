@@ -69,7 +69,7 @@ class Main
                 default:
             }
 
-            final result:Dynamic = Interp.eval(ast, env);
+            final result:Dynamic = Interp.evaluate(ast, env);
 
             prettyArrayPrint('Result', [result]);
         } catch(e) {
